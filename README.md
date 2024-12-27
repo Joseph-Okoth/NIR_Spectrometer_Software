@@ -12,8 +12,8 @@ NIR Quest Software is a user-friendly application designed for agricultural prod
 ## Installation
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/Joseph-Okoth/nir-quest-software.git
-   cd nir-quest-software
+   git clone https://github.com/Joseph-Okoth/nir-quest.git
+   cd nir-quest
    ```
 
 2. **Install the required dependencies:**
