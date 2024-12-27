@@ -1,0 +1,6 @@
+numpy
+scipy
+pyusb
+PyQt5
+matplotlib
+scikit-learn
