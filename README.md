@@ -2,6 +2,8 @@
 
 NIR Quest Software is a user-friendly application designed for agricultural produce classification and prediction using Near-Infrared (NIR) spectroscopy. This software captures measurement procedures graphically, using drag-and-drop spectrometers, transform functions, and display nodes to automate unique post-processing workflows.
 
+It is a free and open source alternative software for Ocean Optics Spectrometers.
+
 ## Features
 - Capture and process spectroscopy data
 - Visualize data with interactive plots
