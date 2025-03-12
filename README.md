@@ -7,14 +7,13 @@ NIR Quest Software is a user-friendly application designed for agricultural prod
 - Visualize data with interactive plots
 - Classify agricultural produce using machine learning models
 - Save and load measurement data
-- User-friendly GUI built with PyQt5
+- User-friendly GUI built with Kivy
 
 ## Installation
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/Joseph-Okoth/nir-quest.git
-   cd nir-quest
-   ```
+   git clone https://github.com/Joseph-Okoth/NIR-Spectrometer-Software.git
+   cd NIR-Spectrometer-Software
 
 2. **Install the required dependencies:**
    ```bash
@@ -37,15 +36,41 @@ python main.py
 
 ## Project Structure
 ```
-nir_quest/
-├── main.py              # Main application launcher
-├── device_interface.py  # Module to handle communication with NIR Quest device
-├── data_processing.py   # Module for processing spectral data
-├── ml_models.py         # Module to handle ML-based classification and prediction
-├── gui.py               # Module for the graphical user interface
-├── utils.py             # Helper functions
-└── requirements.txt     # Dependencies
-
+NIR_Spectrometer_Software/
+│
+├── README.md                   # Project description and instructions
+├── requirements.txt            # List of Python dependencies
+├── main.py                     # Entry point for the application
+│
+├── backend/                    # Backend logic (spectrometer communication, data processing)
+│   ├── __init__.py
+│   ├── spectrometer.py         # Code for spectrometer communication (updated from simple_spectrometer.py)
+│   ├── data_processing.py      # Code for data processing (e.g., peak finding)
+│   └── data_saving.py          # Code for saving data (e.g., CSV, JSON)
+│
+├── frontend/                   # Frontend logic (UI and visualization)
+│   ├── __init__.py
+│   ├── ui.py                   # Main UI layout and logic (using Kivy)
+│   ├── icons/                  # Folder for icons (e.g., FontAwesome, Material Icons)
+│   └── plots.py                # Code for plotting graphs
+│
+├── config/                     # Configuration files
+│   ├── __init__.py
+│   └── ocean_optics_configs.py # Spectrometer configurations (updated from ocean_optics_configs.py)
+│
+├── assets/                     # Static assets (e.g., images, fonts)
+│   ├── icons/                  # Icons for buttons and UI elements
+│   └── fonts/                  # Custom fonts (e.g., FontAwesome)
+│
+├── tests/                      # Unit and integration tests
+│   ├── __init__.py
+│   ├── test_spectrometer.py    # Tests for spectrometer communication
+│   ├── test_data_processing.py # Tests for data processing
+│   └── test_ui.py              # Tests for UI functionality
+│
+└── scripts/                    # Utility scripts (e.g., for deployment, data analysis)
+    ├── deploy.sh               # Script to deploy the app
+    └── analyze_data.py         # Script for additional data analysis
 ```
 
 ## Contributing
@@ -56,4 +81,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgements
 - Inspired by OceanView software
-- Developed using Python and PyQt5
+- Developed using Python and Kivy
