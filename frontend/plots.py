@@ -4,5 +4,5 @@ def plot_spectrum(wavelengths, intensities):
     plt.plot(wavelengths, intensities)
     plt.xlabel("Wavelength (nm)")
     plt.ylabel("Intensity")
-    plt.title("NIR Spectrum")
+    plt.title("Spectrum Window")
     plt.show()
