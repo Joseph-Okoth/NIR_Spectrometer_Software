@@ -77,7 +77,7 @@ class MainLayout(BoxLayout):
 
     def create_icon_bar(self):
         """Create the first horizontal icon bar."""
-        icon_bar = BoxLayout(size_hint=(0.5, None), height=50)
+        icon_bar = BoxLayout(size_hint=(0.7, None), height=50)
         icons = [
             ('frontend/icons/app_icon.png', 'NIR Software', None, (50, 50)),
             ('frontend/icons/new_project.png', 'Start Measurement', self.toggle_measurement, (50, 50)),
