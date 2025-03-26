@@ -77,7 +77,7 @@ class MainLayout(BoxLayout):
 
     def create_icon_bar(self):
         """Create the first horizontal icon bar."""
-        icon_bar = BoxLayout(size_hint=(0.7, None), height=50)
+        icon_bar = BoxLayout(size_hint=(None, None), height=50)
         icons = [
             ('frontend/icons/app_icon.png', 'NIR Software', None, (50, 50)),
             ('frontend/icons/new_project.png', 'Start Measurement', self.toggle_measurement, (50, 50)),
@@ -94,18 +94,18 @@ class MainLayout(BoxLayout):
 
     def create_icon_bar_2(self):
         """Create the second horizontal icon bar with additional grid controls."""
-        icon_bar = BoxLayout(size_hint=(None, None), height=40)
+        icon_bar = BoxLayout(size_hint=(None, None), height=55)
         icons = [
             ('frontend/icons/scale_to_fill_window.png', 'Scale to Fill Window', self.scale_to_fill, (50, 50)),
             ('frontend/icons/zoom_into_graph.png', 'Zoom In', self.zoom_in, (50, 50)),
             ('frontend/icons/zoom_out.png', 'Zoom Out', self.zoom_out, (50, 50)),
             ('frontend/icons/grid.png', 'Toggle Grid', self.toggle_grid, (50, 50)),
-            ('frontend/icons/panning.png', 'Panning', self.panning, (50, 50)),
-            ('frontend/icons/spectrum_overlay.png', 'Spectrum Overlay', self.spectrum_overlay, (50, 50)),
-            ('frontend/icons/delete.png', 'Delete Spectrum', self.delete_spectrum, (50, 50)),
-            ('frontend/icons/copy_data_to_clipboard.png', 'Copy Data to Clipboard', self.copy_data, (50, 50)),
-            ('frontend/icons/save_as_csv.png', 'Save as CSV', self.save_as_csv, (50, 50)),
-            ('frontend/icons/print_graph.png', 'Print Graph', self.print_graph, (50, 50))
+            ('frontend/icons/panning.png', 'Panning', self.panning, (45, 45)),
+            ('frontend/icons/spectrum_overlay.png', 'Spectrum Overlay', self.spectrum_overlay, (45, 45)),
+            ('frontend/icons/delete.png', 'Delete Spectrum', self.delete_spectrum, (45, 45)),
+            ('frontend/icons/copy_data_to_clipboard.png', 'Copy Data to Clipboard', self.copy_data, (40, 40)),
+            ('frontend/icons/save_as_csv.png', 'Save as CSV', self.save_as_csv, (45, 45)),
+            ('frontend/icons/print_graph.png', 'Print Graph', self.print_graph, (40, 40))
         ]
         for icon, tooltip, callback, icon_size in icons:
             btn = Button(background_normal=icon, size_hint=(None, None), size=icon_size)
