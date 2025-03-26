@@ -12,6 +12,23 @@ import csv
 import numpy as np
 from backend.spectrometer import find_spectrometer, request_spectrum, drop_spectrometer
 
+# Custom FigureCanvasKivyAgg to handle resize_event and motion_notify_event
+class CustomFigureCanvasKivyAgg(FigureCanvasKivyAgg):
+    def __init__(self, figure, **kwargs):
+        super().__init__(figure, **kwargs)
+        self._is_drawn = False
+
+    def resize_event(self):
+        """Override resize_event to prevent errors."""
+        if not self._is_drawn:
+            self.draw()
+            self._is_drawn = True
+
+    def motion_notify_event(self, x, y, guiEvent=None):
+        """Handle mouse motion events."""
+        if hasattr(super(), 'motion_notify_event'):
+            super().motion_notify_event(x, y, guiEvent)
+
 class MainLayout(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -27,7 +44,7 @@ class MainLayout(BoxLayout):
         self.ax.set_title("Spectrum Window")
 
         # Add the Matplotlib figure to a Kivy widget
-        self.canvas_widget = FigureCanvasKivyAgg(self.fig)
+        self.canvas_widget = CustomFigureCanvasKivyAgg(self.fig)  # Use the custom class
 
         # Add top horizontal rectangles for icons
         self.icon_bar_1 = self.create_icon_bar()
@@ -45,10 +62,10 @@ class MainLayout(BoxLayout):
         """Create the first horizontal icon bar."""
         icon_bar = BoxLayout(size_hint=(1, None), height=50)  # Fixed height for the icon bar
         icons = [
-            ('frontend/icons/app_icon.png', 'NIR Software', None, (50,50)),  # Custom size (width, height)
-            ('frontend/icons/new_project.png', 'Start Measurement', self.toggle_measurement, (50,50)),
-            ('frontend/icons/open.png', 'Open File', self.open_file, (50,50)),
-            ('frontend/icons/run_n_pause.png', 'Run/Pause', self.toggle_measurement, (25,25))
+            ('frontend/icons/app_icon.png', 'NIR Software', None, (50, 50)),  # Custom size (width, height)
+            ('frontend/icons/new_project.png', 'Start Measurement', self.toggle_measurement, (50, 50)),
+            ('frontend/icons/open.png', 'Open File', self.open_file, (50, 50)),
+            ('frontend/icons/run_n_pause.png', 'Run/Pause', self.toggle_measurement, (25, 25))
         ]
         for icon, tooltip, callback, icon_size in icons:
             btn = Button(background_normal=icon, size_hint=(None, None), size=icon_size)
@@ -161,7 +178,7 @@ class MainLayout(BoxLayout):
         """Clear the current spectrum plot."""
         self.ax.clear()
         self.ax.set_xlabel("Wavelength (nm)")
-        self.ax.set_ylabel("Intensity")
+        self.ax.set_ylabel("Intensity (counts)")
         self.ax.set_title("Spectrum Window")
         self.canvas_widget.draw()
 
@@ -193,3 +210,7 @@ class SpectrumApp(App):
 
 if __name__ == '__main__':
     SpectrumApp().run()
+
+
+
+    
