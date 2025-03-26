@@ -33,18 +33,21 @@ class MainLayout(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.orientation = 'vertical'
+        
+        # Grid settings
+        self.grid_enabled = True
+        self.grid_style = {'color': 'lightgray', 'linestyle': '--', 'alpha': 0.7}
+        self.major_grid_style = {'color': 'gray', 'linestyle': '-', 'alpha': 0.5}
 
         # Initialize spectrometer
         self.spectrometer = find_spectrometer()
 
         # Create a Matplotlib figure
         self.fig, self.ax = plt.subplots()
-        self.ax.set_xlabel("Wavelength (nm)")
-        self.ax.set_ylabel("Intensity")
-        self.ax.set_title("Spectrum Window")
+        self._setup_plot()
 
         # Add the Matplotlib figure to a Kivy widget
-        self.canvas_widget = CustomFigureCanvasKivyAgg(self.fig)  # Use the custom class
+        self.canvas_widget = CustomFigureCanvasKivyAgg(self.fig)
 
         # Add top horizontal rectangles for icons
         self.icon_bar_1 = self.create_icon_bar()
@@ -58,30 +61,45 @@ class MainLayout(BoxLayout):
         # Flag to control measurement loop
         self.measuring = False
 
+    def _setup_plot(self):
+        """Initialize plot with proper settings and gridlines."""
+        self.ax.set_xlabel("Wavelength (nm)")
+        self.ax.set_ylabel("Intensity (counts)")
+        self.ax.set_title("Spectrum Window")
+        self._update_grid()
+
+    def _update_grid(self):
+        """Update gridlines based on current settings."""
+        self.ax.grid(self.grid_enabled, which='both', **self.grid_style)
+        self.ax.grid(self.grid_enabled, which='major', **self.major_grid_style)
+        if hasattr(self, 'canvas_widget'):
+            self.canvas_widget.draw()
+
     def create_icon_bar(self):
         """Create the first horizontal icon bar."""
-        icon_bar = BoxLayout(size_hint=(1, None), height=50)  # Fixed height for the icon bar
+        icon_bar = BoxLayout(size_hint=(0.5, None), height=50)
         icons = [
-            ('frontend/icons/app_icon.png', 'NIR Software', None, (50, 50)),  # Custom size (width, height)
+            ('frontend/icons/app_icon.png', 'NIR Software', None, (50, 50)),
             ('frontend/icons/new_project.png', 'Start Measurement', self.toggle_measurement, (50, 50)),
             ('frontend/icons/open.png', 'Open File', self.open_file, (50, 50)),
-            ('frontend/icons/run_n_pause.png', 'Run/Pause', self.toggle_measurement, (25, 25))
+            ('frontend/icons/run_n_pause.png', 'Run/Pause', self.toggle_measurement, (50, 50))
         ]
         for icon, tooltip, callback, icon_size in icons:
             btn = Button(background_normal=icon, size_hint=(None, None), size=icon_size)
             btn.tooltip = tooltip
-            if callback is not None:  # Only bind if callback is not None
+            if callback is not None:
                 btn.bind(on_press=callback)
             icon_bar.add_widget(btn)
         return icon_bar
 
     def create_icon_bar_2(self):
-        """Create the second horizontal icon bar."""
-        icon_bar = BoxLayout(size_hint=(None, None), height=40)  # Fixed height for the icon bar
+        """Create the second horizontal icon bar with additional grid controls."""
+        icon_bar = BoxLayout(size_hint=(None, None), height=40)
         icons = [
             ('frontend/icons/scale_to_fill_window.png', 'Scale to Fill Window', self.scale_to_fill, (50, 50)),
             ('frontend/icons/zoom_into_graph.png', 'Zoom In', self.zoom_in, (50, 50)),
             ('frontend/icons/zoom_out.png', 'Zoom Out', self.zoom_out, (50, 50)),
+            ('frontend/icons/grid.png', 'Toggle Grid', self.toggle_grid, (50, 50)),
             ('frontend/icons/panning.png', 'Panning', self.panning, (50, 50)),
             ('frontend/icons/spectrum_overlay.png', 'Spectrum Overlay', self.spectrum_overlay, (50, 50)),
             ('frontend/icons/delete.png', 'Delete Spectrum', self.delete_spectrum, (50, 50)),
@@ -96,11 +114,16 @@ class MainLayout(BoxLayout):
             icon_bar.add_widget(btn)
         return icon_bar
 
+    def toggle_grid(self, instance):
+        """Toggle grid visibility."""
+        self.grid_enabled = not self.grid_enabled
+        self._update_grid()
+
     def toggle_measurement(self, instance):
         """Toggle the measurement loop."""
         if not self.measuring:
             self.measuring = True
-            Clock.schedule_interval(self.collect_data, 0.5)  # Collect data every 0.5 seconds
+            Clock.schedule_interval(self.collect_data, 0.5)
         else:
             self.measuring = False
             Clock.unschedule(self.collect_data)
@@ -118,11 +141,7 @@ class MainLayout(BoxLayout):
             # Clear the previous plot and plot the new data
             self.ax.clear()
             self.ax.plot(acquired)
-            self.ax.set_xlabel("Wavelength (nm)")
-            self.ax.set_ylabel("Intensity")
-            self.ax.set_title("Spectrum Window")
-
-            # Redraw the canvas to update the plot
+            self._setup_plot()  # Reapply grid and labels
             self.canvas_widget.draw()
 
     def open_file(self, instance):
@@ -138,9 +157,7 @@ class MainLayout(BoxLayout):
             data = np.loadtxt(file_path, delimiter=',')
             self.ax.clear()
             self.ax.plot(data[:, 0], data[:, 1])
-            self.ax.set_xlabel("Wavelength (nm)")
-            self.ax.set_ylabel("Intensity")
-            self.ax.set_title("Spectrum Window")
+            self._setup_plot()  # Reapply grid and labels
             self.canvas_widget.draw()
         except Exception as e:
             print(f"Error loading file: {e}")
@@ -148,6 +165,7 @@ class MainLayout(BoxLayout):
     def scale_to_fill(self, instance):
         """Scale the plot to fill the window."""
         self.ax.autoscale()
+        self._update_grid()
         self.canvas_widget.draw()
 
     def zoom_in(self, instance):
@@ -177,9 +195,7 @@ class MainLayout(BoxLayout):
     def delete_spectrum(self, instance):
         """Clear the current spectrum plot."""
         self.ax.clear()
-        self.ax.set_xlabel("Wavelength (nm)")
-        self.ax.set_ylabel("Intensity (counts)")
-        self.ax.set_title("Spectrum Window")
+        self._setup_plot()  # Reapply grid and labels
         self.canvas_widget.draw()
 
     def copy_data(self, instance):
@@ -211,6 +227,3 @@ class SpectrumApp(App):
 if __name__ == '__main__':
     SpectrumApp().run()
 
-
-
-    
