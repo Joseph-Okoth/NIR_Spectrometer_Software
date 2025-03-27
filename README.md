@@ -1,9 +1,9 @@
 # NIR Spectrometer Software
 
 NIR Spectrometer Software is a user-friendly application that captures measurement procedures graphically, using drag-and-drop spectrometers, transform functions, and display nodes to automate unique post-processing workflows. The software is also being designed for agricultural produce classification and prediction using Machine Learning technologies by analysis of the acquired data.
-
-This software will also enable the user to be able to save the data obtained from the spectrometer in csv format for further analysis or even for reference purposes.
-
+|
+This software also enables the user to save the data obtained from the spectrometer in csv format for further analysis or reference purposes.
+|
 It is a free and open source alternative software for Ocean Optics Spectrometers.
 
 ## Features
