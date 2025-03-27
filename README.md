@@ -1,6 +1,8 @@
-# NIR Quest Software
+# NIR Spectrometer Software
 
-NIR Quest Software is a user-friendly application designed for agricultural produce classification and prediction using Near-Infrared (NIR) spectroscopy. This software captures measurement procedures graphically, using drag-and-drop spectrometers, transform functions, and display nodes to automate unique post-processing workflows.
+NIR Spectrometer Software is a user-friendly application that captures measurement procedures graphically, using drag-and-drop spectrometers, transform functions, and display nodes to automate unique post-processing workflows. The software is also being designed for agricultural produce classification and prediction using Machine Learning technologies by analysis of the acquired data.
+
+This software will also enable the user to be able to save the data obtained from the spectrometer in csv format for further analysis or even for reference purposes.
 
 It is a free and open source alternative software for Ocean Optics Spectrometers.
 
@@ -42,6 +44,8 @@ NIR_Spectrometer_Software/
 │
 ├── README.md                   # Project description and instructions
 ├── requirements.txt            # List of Python dependencies
+├── data_processing.py          # Code for data processing (Formula and Calculations)
+├── utils.py                    # Code for Validating the formula and handling calculation errors
 ├── main.py                     # Entry point for the application
 │
 ├── backend/                    # Backend logic (spectrometer communication, data processing)
@@ -76,7 +80,7 @@ NIR_Spectrometer_Software/
 ```
 
 ## Contributing
-Contributions are welcome! Please fork the repository and submit a pull request.
+Contributions are welcome! Please fork the repository and submit a pull request. Let's make a great application that we can easily access and have control over.
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
