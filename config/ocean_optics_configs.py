@@ -48,3 +48,4 @@ model_configs = (
     ([0x2000], 'Jaz', 4097, end_points['EP1_OUT'], end_points['EP1_IN'], 512, end_points['EP2_IN'], 512),
     ([0x1010, 0x100C], 'NIR', 4097, end_points['EP2_OUT'], end_points['EP7_IN'], 64, end_points['EP7_IN'], 64)
 )
+
