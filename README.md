@@ -50,9 +50,9 @@ NIR_Spectrometer_Software/
 │
 ├── backend/                    # Backend logic (spectrometer communication, data processing)
 │   ├── __init__.py
-│   ├── spectrometer.py         # Code for spectrometer communication (updated from simple_spectrometer.py)
-│   ├── data_processing.py      # Code for data processing (e.g., peak finding)
-│   └── data_saving.py          # Code for saving data (e.g., CSV, JSON)
+│   ├── spectrometer.py         # Code for spectrometer communication
+│   ├── data_processing.py      # Code for data processing (peak finding)
+│   └── data_saving.py          # Code for saving data (CSV)
 │
 ├── frontend/                   # Frontend logic (UI and visualization)
 │   ├── __init__.py
@@ -62,7 +62,7 @@ NIR_Spectrometer_Software/
 │
 ├── config/                     # Configuration files
 │   ├── __init__.py
-│   └── ocean_optics_configs.py # Spectrometer configurations (updated from ocean_optics_configs.py)
+│   └── ocean_optics_configs.py # Spectrometer configurations
 │
 ├── assets/                     # Static assets (e.g., images, fonts)
 │   ├── icons/                  # Icons for buttons and UI elements
