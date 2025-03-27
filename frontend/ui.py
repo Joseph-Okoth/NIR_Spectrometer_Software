@@ -185,11 +185,26 @@ class MainLayout(BoxLayout):
         self.canvas_widget.draw()
 
     def panning(self, instance):
-        """Enable panning mode (to be implemented)."""
+        """Enable panning mode."""
+        # xlim = self.ax.get_xlim()
+        # ylim = self.ax.get_ylim()
+        # self.ax.set_xlim(xlim[0], xlim[1])
+        # self.ax.set_ylim(ylim[0], ylim[1])
+        # self.canvas_widget.draw()
         pass
 
     def spectrum_overlay(self, instance):
-        """Overlay multiple spectra (to be implemented)."""
+        """Overlay multiple spectra."""
+        # x = np.linspace(0, 10, 100)
+        # y1 = np.sin(x)
+        # y2 = np.cos(x)
+        # self.ax.clear()
+        # self.ax.plot(x, y1)
+        # self.ax.plot(x, y2)
+        # self.ax.set_xlabel("Wavelength (nm)")
+        # self.ax.set_ylabel("Intensity")
+        # self.ax.set_title("Spectrum Window")
+        # self.canvas_widget.draw()
         pass
 
     def delete_spectrum(self, instance):
