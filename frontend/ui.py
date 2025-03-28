@@ -42,6 +42,10 @@ class MainLayout(BoxLayout):
         # Initialize spectrometer
         self.spectrometer = find_spectrometer()
 
+        # Add these lines to store spectrum data
+        self.wavelengths = np.arange(4096)  # Default wavelength array
+        self.spectrum_data = None
+
         # Create a Matplotlib figure
         self.fig, self.ax = plt.subplots()
         self._setup_plot()
@@ -61,19 +65,19 @@ class MainLayout(BoxLayout):
         # Flag to control measurement loop
         self.measuring = False
 
-    def _setup_plot(self):
-        """Initialize plot with proper settings and gridlines."""
-        self.ax.set_xlabel("Wavelength (nm)")
-        self.ax.set_ylabel("Intensity (counts)")
-        self.ax.set_title("Spectrum Window")
-        self._update_grid()
-
     def _update_grid(self):
         """Update gridlines based on current settings."""
         self.ax.grid(self.grid_enabled, which='both', **self.grid_style)
         self.ax.grid(self.grid_enabled, which='major', **self.major_grid_style)
         if hasattr(self, 'canvas_widget'):
             self.canvas_widget.draw()
+
+    def _setup_plot(self):
+        """Initialize plot with proper settings and gridlines."""
+        self.ax.set_xlabel("Wavelength (nm)")
+        self.ax.set_ylabel("Intensity (counts)")
+        self.ax.set_title("Spectrum Window")
+        self._update_grid()
 
     def create_icon_bar(self):
         """Create the first horizontal icon bar."""
@@ -137,12 +141,17 @@ class MainLayout(BoxLayout):
                 self.spectrometer.spectra_ep_in,
                 self.spectrometer.cmd_ep_out
             )
-
-            # Clear the previous plot and plot the new data
-            self.ax.clear()
-            self.ax.plot(acquired)
-            self._setup_plot()  # Reapply grid and labels
-            self.canvas_widget.draw()
+            
+            if acquired:  # Check if we got valid data
+                self.spectrum_data = acquired  # Store the spectrum data
+                
+                # Clear the previous plot and plot the new data
+                self.ax.clear()
+                self.ax.plot(self.wavelengths, self.spectrum_data)  # Plot with wavelengths
+                self._setup_plot()  # Reapply grid and labels
+                self.canvas_widget.draw()
+            else:
+                print("No data acquired from spectrometer")
 
     def open_file(self, instance):
         """Open a file dialog to load spectrum data."""
@@ -186,25 +195,10 @@ class MainLayout(BoxLayout):
 
     def panning(self, instance):
         """Enable panning mode."""
-        # xlim = self.ax.get_xlim()
-        # ylim = self.ax.get_ylim()
-        # self.ax.set_xlim(xlim[0], xlim[1])
-        # self.ax.set_ylim(ylim[0], ylim[1])
-        # self.canvas_widget.draw()
         pass
 
     def spectrum_overlay(self, instance):
         """Overlay multiple spectra."""
-        # x = np.linspace(0, 10, 100)
-        # y1 = np.sin(x)
-        # y2 = np.cos(x)
-        # self.ax.clear()
-        # self.ax.plot(x, y1)
-        # self.ax.plot(x, y2)
-        # self.ax.set_xlabel("Wavelength (nm)")
-        # self.ax.set_ylabel("Intensity")
-        # self.ax.set_title("Spectrum Window")
-        # self.canvas_widget.draw()
         pass
 
     def delete_spectrum(self, instance):
@@ -219,12 +213,12 @@ class MainLayout(BoxLayout):
 
     def save_as_csv(self, instance):
         """Save the current spectrum data to a CSV file."""
-        if hasattr(self, 'spectrum_data'):
+        if hasattr(self, 'spectrum_data') and self.spectrum_data is not None:
             with open('spectrum_data.csv', 'w', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(["Wavelength (nm)", "Intensity"])
-                for i in range(len(self.spectrum_data)):
-                    writer.writerow([i, self.spectrum_data[i]])
+                for i, intensity in enumerate(self.spectrum_data):
+                    writer.writerow([self.wavelengths[i], intensity])
 
     def print_graph(self, instance):
         """Print the current graph (to be implemented)."""

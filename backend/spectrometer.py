@@ -57,6 +57,8 @@ def request_spectrum(usb_device, packet_size, spectra_epi, commands_epo):
     usb_send(usb_device, struct.pack('<B', command_set['SPECTR_REQUEST_SPECTRA']), epo=commands_epo)
 
     data = usb_read(usb_device, epi=spectra_epi, epi_size=packet_size)
+    print(f"Received data length: {len(data)}")  # Debug print
+    
     if len(data) == packet_size and data[packet_size - 1] == 0x69:
         spectrum = []
         for i in range(0, 4096, 2):
@@ -64,9 +66,11 @@ def request_spectrum(usb_device, packet_size, spectra_epi, commands_epo):
             intval = int.from_bytes(databytes, byteorder='little')
             spectrum.append(intval)
         spectrum[1] = spectrum[0]
+        print(f"Processed spectrum length: {len(spectrum)}")  # Debug print
         return spectrum
     else:
-        return 0
+        print("Invalid data received from spectrometer")  # Debug print
+        return None
 
 def usb_send(usb_device, data, epo=None):
     if epo is None:
