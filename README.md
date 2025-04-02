@@ -13,6 +13,10 @@ It is a free and open source alternative software for Ocean Optics Spectrometers
 - Save and load measurement data
 - User-friendly GUI built with Kivy
 
+## Spectrum Visualization
+
+![NIR Spectrum Screenshot](assets/icons/spectrum_screenshot.png)
+
 ## Installation
 1. **Clone the repository:**
    ```bash
