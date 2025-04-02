@@ -54,22 +54,39 @@ def drop_spectrometer(usb_device):
     usb.util.dispose_resources(usb_device)
 
 def request_spectrum(usb_device, packet_size, spectra_epi, commands_epo):
-    usb_send(usb_device, struct.pack('<B', command_set['SPECTR_REQUEST_SPECTRA']), epo=commands_epo)
-
-    data = usb_read(usb_device, epi=spectra_epi, epi_size=packet_size)
-    print(f"Received data length: {len(data)}")  # Debug print
-    
-    if len(data) == packet_size and data[packet_size - 1] == 0x69:
-        spectrum = []
-        for i in range(0, 4096, 2):
-            databytes = [data[i], data[i + 1]]
-            intval = int.from_bytes(databytes, byteorder='little')
-            spectrum.append(intval)
-        spectrum[1] = spectrum[0]
-        print(f"Processed spectrum length: {len(spectrum)}")  # Debug print
-        return spectrum
-    else:
-        print("Invalid data received from spectrometer")  # Debug print
+    """Request and read spectrum data from the spectrometer."""
+    try:
+        # Send spectrum request command
+        print("Sending spectrum request command...")
+        usb_send(usb_device, struct.pack('<B', command_set['SPECTR_REQUEST_SPECTRA']), epo=commands_epo)
+        
+        # Read the response data
+        print(f"Reading {packet_size} bytes from spectrometer...")
+        data = usb_read(usb_device, epi=spectra_epi, epi_size=packet_size)
+        print(f"Received {len(data)} bytes")
+        
+        if not data:
+            print("No data received from spectrometer")
+            return None
+            
+        if len(data) != packet_size:
+            print(f"Incorrect packet size: expected {packet_size}, got {len(data)}")
+            return None
+            
+        if data[packet_size - 1] != 0x69:
+            print("Invalid end marker in data")
+            return None
+            
+        # Process the spectrum data
+        spectrum = process_spectrum(data)
+        if spectrum:
+            print(f"Successfully processed spectrum with {len(spectrum)} points")
+            return spectrum
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error in request_spectrum: {e}")
         return None
 
 def usb_send(usb_device, data, epo=None):
@@ -83,6 +100,31 @@ def usb_read(usb_device, epi=None, epi_size=None):
     if epi_size is None:
         epi_size = 512
     return usb_device.read(epi, epi_size)
+
+def process_spectrum(data):
+    """Convert raw spectral data bytes to intensity values for NIR-Quest."""
+    try:
+        spectrum = []
+        # Process 16-bit intensity values (NIR-Quest uses 16-bit ADC)
+        for i in range(0, len(data)-1, 2):
+            intensity = struct.unpack('<H', data[i:i+2])[0]
+            spectrum.append(intensity)
+            
+        # Verify we got the expected number of points (4096 for NIR-Quest)
+        if len(spectrum) != 4096:
+            print(f"Warning: Expected 4096 points, got {len(spectrum)}")
+            
+        # Basic data validation
+        if max(spectrum) == 0:
+            print("Warning: All intensity values are zero")
+        elif max(spectrum) >= 65535:
+            print("Warning: Intensity values may be saturated")
+            
+        return spectrum
+        
+    except Exception as e:
+        print(f"Error processing spectrum: {e}")
+        return None
 
 
 

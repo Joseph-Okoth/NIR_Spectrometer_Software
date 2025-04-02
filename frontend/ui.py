@@ -42,12 +42,13 @@ class MainLayout(BoxLayout):
         # Initialize spectrometer
         self.spectrometer = find_spectrometer()
 
-        # Add these lines to store spectrum data
-        self.wavelengths = np.arange(4096)  # Default wavelength array
+        # Initialize wavelength array for NIR-Quest (900-2500 nm range)
+        num_pixels = 4096  # NIR-Quest typical pixel count
+        self.wavelengths = np.linspace(900, 2500, num_pixels)  # Create wavelength array
         self.spectrum_data = None
 
-        # Create a Matplotlib figure
-        self.fig, self.ax = plt.subplots()
+        # Create a Matplotlib figure with specific size and DPI
+        self.fig, self.ax = plt.subplots(figsize=(10, 6), dpi=100)
         self._setup_plot()
 
         # Add the Matplotlib figure to a Kivy widget
@@ -76,7 +77,13 @@ class MainLayout(BoxLayout):
         """Initialize plot with proper settings and gridlines."""
         self.ax.set_xlabel("Wavelength (nm)")
         self.ax.set_ylabel("Intensity (counts)")
-        self.ax.set_title("Spectrum Window")
+        self.ax.set_title("NIR Spectrum")
+        
+        # Set the x-axis range to match NIR-Quest specifications
+        self.ax.set_xlim(900, 2500)
+        
+        # Add minor gridlines for better readability
+        self.ax.minorticks_on()
         self._update_grid()
 
     def create_icon_bar(self):
@@ -134,24 +141,58 @@ class MainLayout(BoxLayout):
 
     def collect_data(self, dt):
         """Collect data from the spectrometer and update the plot."""
-        if self.spectrometer.usb_device:
-            acquired = request_spectrum(
-                self.spectrometer.usb_device,
-                self.spectrometer.packet_size,
-                self.spectrometer.spectra_ep_in,
-                self.spectrometer.cmd_ep_out
-            )
+        if not self.spectrometer.usb_device:
+            print("No spectrometer device found")
+            return
+
+        print("Acquiring spectrum data...")
+        acquired = request_spectrum(
+            self.spectrometer.usb_device,
+            self.spectrometer.packet_size,
+            self.spectrometer.spectra_ep_in,
+            self.spectrometer.cmd_ep_out
+        )
+        
+        if acquired:
+            print(f"Data received - Length: {len(acquired)}")
+            print(f"First few values: {acquired[:5]}")
             
-            if acquired:  # Check if we got valid data
-                self.spectrum_data = acquired  # Store the spectrum data
+            # Ensure wavelengths and spectrum data have same length
+            if len(acquired) != len(self.wavelengths):
+                print(f"Length mismatch: wavelengths ({len(self.wavelengths)}) vs spectrum ({len(acquired)})")
+                return
                 
-                # Clear the previous plot and plot the new data
+            self.spectrum_data = acquired
+            
+            try:
+                # Clear the previous plot
                 self.ax.clear()
-                self.ax.plot(self.wavelengths, self.spectrum_data)  # Plot with wavelengths
-                self._setup_plot()  # Reapply grid and labels
+                
+                # Plot with proper formatting and check data ranges
+                min_intensity = min(self.spectrum_data)
+                max_intensity = max(self.spectrum_data)
+                print(f"Intensity range: {min_intensity} to {max_intensity}")
+                
+                self.ax.plot(self.wavelengths, self.spectrum_data, 'b-', linewidth=1.5, label='Spectrum')
+                
+                # Set y-axis limits with some padding
+                self.ax.set_ylim(min_intensity * 0.9, max_intensity * 1.1)
+                
+                # Add legend and grid
+                self.ax.legend(loc='upper right')
+                
+                # Reapply the plot settings
+                self._setup_plot()
+                
+                # Force redraw
+                self.fig.tight_layout()
                 self.canvas_widget.draw()
-            else:
-                print("No data acquired from spectrometer")
+                
+                print("Plot updated successfully")
+            except Exception as e:
+                print(f"Error plotting data: {e}")
+        else:
+            print("Failed to acquire spectrum data")
 
     def open_file(self, instance):
         """Open a file dialog to load spectrum data."""
