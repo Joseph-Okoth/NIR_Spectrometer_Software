@@ -1,4 +1,4 @@
 backend/__pycache__/*
 config/__pycache__/*
 frontend/__pycache__/*
-./spectrum_data.csv
+spectrum_data.csv
