@@ -60,30 +60,30 @@ def request_spectrum(usb_device, packet_size, spectra_epi, commands_epo):
         print("Sending spectrum request command...")
         usb_send(usb_device, struct.pack('<B', command_set['SPECTR_REQUEST_SPECTRA']), epo=commands_epo)
         
-        # Read the response data
-        print(f"Reading {packet_size} bytes from spectrometer...")
-        data = usb_read(usb_device, epi=spectra_epi, epi_size=packet_size)
-        print(f"Received {len(data)} bytes")
+        # Read the response data - use dynamic buffer size
+        received_data = usb_read(usb_device, epi=spectra_epi, epi_size=packet_size)
+        actual_size = len(received_data)
+        print(f"Received {actual_size} bytes")
         
-        if not data:
+        if not received_data:
             print("No data received from spectrometer")
             return None
             
-        if len(data) != packet_size:
-            print(f"Incorrect packet size: expected {packet_size}, got {len(data)}")
-            return None
-            
-        if data[packet_size - 1] != 0x69:
+        # Check for end marker - should be 0x69 at the end
+        if actual_size > 0 and received_data[actual_size - 1] != 0x69:
             print("Invalid end marker in data")
             return None
             
-        # Process the spectrum data
-        spectrum = process_spectrum(data)
-        if spectrum:
-            print(f"Successfully processed spectrum with {len(spectrum)} points")
-            return spectrum
+        # Process the spectrum data with actual received size
+        spectrum = []
+        # Process 16-bit intensity values (2 bytes per point)
+        for i in range(0, actual_size-1, 2):
+            if i+1 < actual_size:
+                intensity = struct.unpack('<H', bytes([received_data[i], received_data[i+1]]))[0]
+                spectrum.append(intensity)
         
-        return None
+        print(f"Successfully processed spectrum with {len(spectrum)} points")
+        return spectrum
         
     except Exception as e:
         print(f"Error in request_spectrum: {e}")

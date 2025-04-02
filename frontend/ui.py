@@ -12,7 +12,7 @@ import csv
 import numpy as np
 from backend.spectrometer import find_spectrometer, request_spectrum, drop_spectrometer
 
-# Custom FigureCanvasKivyAgg to handle resize_event and motion_notify_event
+# Custom FigureCanvasKivyAgg to handle resize_event, motion_notify_event, and scroll_event
 class CustomFigureCanvasKivyAgg(FigureCanvasKivyAgg):
     def __init__(self, figure, **kwargs):
         super().__init__(figure, **kwargs)
@@ -28,6 +28,33 @@ class CustomFigureCanvasKivyAgg(FigureCanvasKivyAgg):
         """Handle mouse motion events."""
         if hasattr(super(), 'motion_notify_event'):
             super().motion_notify_event(x, y, guiEvent)
+            
+    def scroll_event(self, x, y, step, guiEvent=None):
+        """Handle scroll events for zooming."""
+        if hasattr(super(), 'scroll_event'):
+            super().scroll_event(x, y, step, guiEvent)
+        else:
+            # Fallback implementation if parent class doesn't have the method
+            ax = self.figure.gca()
+            # Get current axis limits
+            xlim = ax.get_xlim()
+            ylim = ax.get_ylim()
+            
+            # Zoom factor - adjust to taste
+            scale_factor = 0.1
+            
+            if step > 0:  # Zoom in
+                ax.set_xlim(xlim[0] + (xlim[1] - xlim[0]) * scale_factor,
+                           xlim[1] - (xlim[1] - xlim[0]) * scale_factor)
+                ax.set_ylim(ylim[0] + (ylim[1] - ylim[0]) * scale_factor,
+                           ylim[1] - (ylim[1] - ylim[0]) * scale_factor)
+            else:  # Zoom out
+                ax.set_xlim(xlim[0] - (xlim[1] - xlim[0]) * scale_factor,
+                           xlim[1] + (xlim[1] - xlim[0]) * scale_factor)
+                ax.set_ylim(ylim[0] - (ylim[1] - ylim[0]) * scale_factor,
+                           ylim[1] + (ylim[1] - ylim[0]) * scale_factor)
+            
+            self.draw()
 
 class MainLayout(BoxLayout):
     def __init__(self, **kwargs):
@@ -42,9 +69,9 @@ class MainLayout(BoxLayout):
         # Initialize spectrometer
         self.spectrometer = find_spectrometer()
 
-        # Initialize wavelength array for NIR-Quest (900-2500 nm range)
-        num_pixels = 4096  # NIR-Quest typical pixel count
-        self.wavelengths = np.linspace(900, 2500, num_pixels)  # Create wavelength array
+        # Initialize wavelength array - will adjust dynamically when data arrives
+        self.num_pixels = 512  # Initial guess based on 1025/2 bytes (16-bit values)
+        self.wavelengths = np.linspace(900, 2500, self.num_pixels)
         self.spectrum_data = None
 
         # Create a Matplotlib figure with specific size and DPI
@@ -157,10 +184,10 @@ class MainLayout(BoxLayout):
             print(f"Data received - Length: {len(acquired)}")
             print(f"First few values: {acquired[:5]}")
             
-            # Ensure wavelengths and spectrum data have same length
+            # Adjust wavelength array if necessary to match data length
             if len(acquired) != len(self.wavelengths):
-                print(f"Length mismatch: wavelengths ({len(self.wavelengths)}) vs spectrum ({len(acquired)})")
-                return
+                print(f"Adjusting wavelength array to match data: {len(acquired)} points")
+                self.wavelengths = np.linspace(900, 2500, len(acquired))
                 
             self.spectrum_data = acquired
             
@@ -173,7 +200,7 @@ class MainLayout(BoxLayout):
                 max_intensity = max(self.spectrum_data)
                 print(f"Intensity range: {min_intensity} to {max_intensity}")
                 
-                self.ax.plot(self.wavelengths, self.spectrum_data, 'b-', linewidth=1.5, label='Spectrum')
+                self.ax.plot(self.wavelengths, self.spectrum_data, 'b-', linewidth=1.5, label=f'Spectrum ({len(self.spectrum_data)} points)')
                 
                 # Set y-axis limits with some padding
                 self.ax.set_ylim(min_intensity * 0.9, max_intensity * 1.1)
