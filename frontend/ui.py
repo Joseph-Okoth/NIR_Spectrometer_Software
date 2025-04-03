@@ -4,57 +4,15 @@ from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.clock import Clock
-from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
 import matplotlib.pyplot as plt
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.popup import Popup
 import csv
 import numpy as np
+import os
 from backend.spectrometer import find_spectrometer, request_spectrum, drop_spectrometer
-
-# Custom FigureCanvasKivyAgg to handle resize_event, motion_notify_event, and scroll_event
-class CustomFigureCanvasKivyAgg(FigureCanvasKivyAgg):
-    def __init__(self, figure, **kwargs):
-        super().__init__(figure, **kwargs)
-        self._is_drawn = False
-
-    def resize_event(self):
-        """Override resize_event to prevent errors."""
-        if not self._is_drawn:
-            self.draw()
-            self._is_drawn = True
-
-    def motion_notify_event(self, x, y, guiEvent=None):
-        """Handle mouse motion events."""
-        if hasattr(super(), 'motion_notify_event'):
-            super().motion_notify_event(x, y, guiEvent)
-            
-    def scroll_event(self, x, y, step, guiEvent=None):
-        """Handle scroll events for zooming."""
-        if hasattr(super(), 'scroll_event'):
-            super().scroll_event(x, y, step, guiEvent)
-        else:
-            # Fallback implementation if parent class doesn't have the method
-            ax = self.figure.gca()
-            # Get current axis limits
-            xlim = ax.get_xlim()
-            ylim = ax.get_ylim()
-            
-            # Zoom factor - adjust to taste
-            scale_factor = 0.1
-            
-            if step > 0:  # Zoom in
-                ax.set_xlim(xlim[0] + (xlim[1] - xlim[0]) * scale_factor,
-                           xlim[1] - (xlim[1] - xlim[0]) * scale_factor)
-                ax.set_ylim(ylim[0] + (ylim[1] - ylim[0]) * scale_factor,
-                           ylim[1] - (ylim[1] - ylim[0]) * scale_factor)
-            else:  # Zoom out
-                ax.set_xlim(xlim[0] - (xlim[1] - xlim[0]) * scale_factor,
-                           xlim[1] + (xlim[1] - xlim[0]) * scale_factor)
-                ax.set_ylim(ylim[0] - (ylim[1] - ylim[0]) * scale_factor,
-                           ylim[1] + (ylim[1] - ylim[0]) * scale_factor)
-            
-            self.draw()
+from backend.data_saving import save_to_csv, save_with_metadata, load_from_csv
+from frontend.matplotlib_widget import MatplotlibWidget
 
 class MainLayout(BoxLayout):
     def __init__(self, **kwargs):
@@ -69,36 +27,41 @@ class MainLayout(BoxLayout):
         # Initialize spectrometer
         self.spectrometer = find_spectrometer()
 
-        # Initialize wavelength array - will adjust dynamically when data arrives
-        self.num_pixels = 512  # Initial guess based on 1025/2 bytes (16-bit values)
+        # Initialize wavelength array and spectrum data
+        self.num_pixels = 512  # Based on actual data received
         self.wavelengths = np.linspace(900, 2500, self.num_pixels)
         self.spectrum_data = None
-
-        # Create a Matplotlib figure with specific size and DPI
-        self.fig, self.ax = plt.subplots(figsize=(10, 6), dpi=100)
-        self._setup_plot()
-
-        # Add the Matplotlib figure to a Kivy widget
-        self.canvas_widget = CustomFigureCanvasKivyAgg(self.fig)
-
-        # Add top horizontal rectangles for icons
-        self.icon_bar_1 = self.create_icon_bar()
-        self.icon_bar_2 = self.create_icon_bar_2()
-
-        # Add widgets to the main layout
-        self.add_widget(self.icon_bar_1)
-        self.add_widget(self.icon_bar_2)
-        self.add_widget(self.canvas_widget)
-
-        # Flag to control measurement loop
         self.measuring = False
+        
+        # Create a matplotlib figure
+        self.fig, self.ax = plt.subplots(figsize=(10, 6), dpi=100)
+        
+        # Create our custom MatplotlibWidget with the figure - MOVED UP
+        self.plot_widget = MatplotlibWidget(figure=self.fig)
+        
+        # Setup plot AFTER creating plot_widget
+        self._setup_plot()
+        
+        # Create icon bars
+        icon_bar1 = self.create_icon_bar()
+        icon_bar2 = self.create_icon_bar_2()
+        
+        # Main layout
+        self.add_widget(icon_bar1)
+        self.add_widget(icon_bar2)
+        self.add_widget(self.plot_widget)
+        
+        # Status bar at the bottom
+        status_bar = BoxLayout(size_hint=(1, None), height=30)
+        status_label = Label(text="NIR Spectrometer - Ready", size_hint=(1, 1))
+        status_bar.add_widget(status_label)
+        self.add_widget(status_bar)
 
     def _update_grid(self):
         """Update gridlines based on current settings."""
         self.ax.grid(self.grid_enabled, which='both', **self.grid_style)
         self.ax.grid(self.grid_enabled, which='major', **self.major_grid_style)
-        if hasattr(self, 'canvas_widget'):
-            self.canvas_widget.draw()
+        self.plot_widget.draw()
 
     def _setup_plot(self):
         """Initialize plot with proper settings and gridlines."""
@@ -213,7 +176,7 @@ class MainLayout(BoxLayout):
                 
                 # Force redraw
                 self.fig.tight_layout()
-                self.canvas_widget.draw()
+                self.plot_widget.draw()
                 
                 print("Plot updated successfully")
             except Exception as e:
@@ -235,7 +198,7 @@ class MainLayout(BoxLayout):
             self.ax.clear()
             self.ax.plot(data[:, 0], data[:, 1])
             self._setup_plot()  # Reapply grid and labels
-            self.canvas_widget.draw()
+            self.plot_widget.draw()
         except Exception as e:
             print(f"Error loading file: {e}")
 
@@ -243,7 +206,7 @@ class MainLayout(BoxLayout):
         """Scale the plot to fill the window."""
         self.ax.autoscale()
         self._update_grid()
-        self.canvas_widget.draw()
+        self.plot_widget.draw()
 
     def zoom_in(self, instance):
         """Zoom into the plot."""
@@ -251,7 +214,7 @@ class MainLayout(BoxLayout):
         ylim = self.ax.get_ylim()
         self.ax.set_xlim(xlim[0] * 0.9, xlim[1] * 0.9)
         self.ax.set_ylim(ylim[0] * 0.9, ylim[1] * 0.9)
-        self.canvas_widget.draw()
+        self.plot_widget.draw()
 
     def zoom_out(self, instance):
         """Zoom out of the plot."""
@@ -259,7 +222,7 @@ class MainLayout(BoxLayout):
         ylim = self.ax.get_ylim()
         self.ax.set_xlim(xlim[0] * 1.1, xlim[1] * 1.1)
         self.ax.set_ylim(ylim[0] * 1.1, ylim[1] * 1.1)
-        self.canvas_widget.draw()
+        self.plot_widget.draw()
 
     def panning(self, instance):
         """Enable panning mode."""
@@ -273,7 +236,7 @@ class MainLayout(BoxLayout):
         """Clear the current spectrum plot."""
         self.ax.clear()
         self._setup_plot()  # Reapply grid and labels
-        self.canvas_widget.draw()
+        self.plot_widget.draw()
 
     def copy_data(self, instance):
         """Copy the current spectrum data to the clipboard (to be implemented)."""
@@ -282,11 +245,62 @@ class MainLayout(BoxLayout):
     def save_as_csv(self, instance):
         """Save the current spectrum data to a CSV file."""
         if hasattr(self, 'spectrum_data') and self.spectrum_data is not None:
-            with open('spectrum_data.csv', 'w', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow(["Wavelength (nm)", "Intensity"])
-                for i, intensity in enumerate(self.spectrum_data):
-                    writer.writerow([self.wavelengths[i], intensity])
+            # Open a file chooser popup
+            file_chooser = FileChooserListView(filters=['*.csv'])
+            
+            # Create a save button
+            save_button = Button(text='Save', size_hint=(1, 0.1))
+            cancel_button = Button(text='Cancel', size_hint=(1, 0.1))
+            
+            # Create a layout for the buttons
+            buttons = BoxLayout(size_hint=(1, 0.1), orientation='horizontal')
+            buttons.add_widget(save_button)
+            buttons.add_widget(cancel_button)
+            
+            # Create a layout for the file chooser and buttons
+            content = BoxLayout(orientation='vertical')
+            content.add_widget(file_chooser)
+            content.add_widget(buttons)
+            
+            # Create the popup
+            popup = Popup(title='Save Spectrum Data', content=content, size_hint=(0.9, 0.9))
+            
+            # Define save action
+            def save_file(instance):
+                if file_chooser.selection:
+                    selected_dir = file_chooser.path
+                    filename = file_chooser.selection[0] if file_chooser.selection[0].endswith('.csv') else file_chooser.selection[0] + '.csv'
+                    
+                    # Check if we're selecting a directory
+                    if os.path.isdir(filename):
+                        filename = os.path.join(filename, 'spectrum_data.csv')
+                else:
+                    # If no selection, use default path
+                    selected_dir = file_chooser.path
+                    filename = os.path.join(selected_dir, 'spectrum_data.csv')
+                
+                # Save data with metadata
+                save_with_metadata(
+                    self.wavelengths, 
+                    self.spectrum_data, 
+                    filename=filename,
+                    metadata={
+                        'Device': 'NIR-Quest',
+                        'Integration time': '100ms' 
+                    }
+                )
+                popup.dismiss()
+            
+            # Define cancel action
+            def cancel(instance):
+                popup.dismiss()
+            
+            # Bind actions to buttons
+            save_button.bind(on_press=save_file)
+            cancel_button.bind(on_press=cancel)
+            
+            # Open the popup
+            popup.open()
 
     def print_graph(self, instance):
         """Print the current graph (to be implemented)."""
