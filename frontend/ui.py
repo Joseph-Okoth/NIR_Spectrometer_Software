@@ -26,10 +26,26 @@ class MainLayout(BoxLayout):
 
         # Initialize spectrometer
         self.spectrometer = find_spectrometer()
-
+        
+        # Get wavelength range based on spectrometer model
+        self.wavelength_start = 900
+        self.wavelength_end = 2500
+        
+        # Adjust range if we know the spectrometer model
+        if hasattr(self.spectrometer, 'model_name'):
+            model = self.spectrometer.model_name
+            print(f"Detected spectrometer model: {model}")
+            # You could have different ranges based on model
+            if "NIR" in model or "NIRQUEST" in model:
+                self.wavelength_start = 900
+                self.wavelength_end = 2500
+            elif "USB2000" in model:
+                self.wavelength_start = 200
+                self.wavelength_end = 850
+        
         # Initialize wavelength array and spectrum data
-        self.num_pixels = 512  # Based on actual data received
-        self.wavelengths = np.linspace(900, 2500, self.num_pixels)
+        self.num_pixels = 512  # Will be adjusted based on actual data received
+        self.wavelengths = np.linspace(self.wavelength_start, self.wavelength_end, self.num_pixels)
         self.spectrum_data = None
         self.measuring = False
         
@@ -69,8 +85,13 @@ class MainLayout(BoxLayout):
         self.ax.set_ylabel("Intensity (counts)")
         self.ax.set_title("NIR Spectrum")
         
-        # Set the x-axis range to match NIR-Quest specifications
-        self.ax.set_xlim(900, 2500)
+        # Set the x-axis range based on wavelength data, not hardcoded
+        if hasattr(self, 'wavelengths') and len(self.wavelengths) > 0:
+            x_min = min(self.wavelengths)
+            x_max = max(self.wavelengths)
+            # Add a small margin
+            margin = (x_max - x_min) * 0.05
+            self.ax.set_xlim(x_min - margin, x_max + margin)
         
         # Add minor gridlines for better readability
         self.ax.minorticks_on()
@@ -150,7 +171,7 @@ class MainLayout(BoxLayout):
             # Adjust wavelength array if necessary to match data length
             if len(acquired) != len(self.wavelengths):
                 print(f"Adjusting wavelength array to match data: {len(acquired)} points")
-                self.wavelengths = np.linspace(900, 2500, len(acquired))
+                self.wavelengths = np.linspace(self.wavelength_start, self.wavelength_end, len(acquired))
                 
             self.spectrum_data = acquired
             
@@ -163,10 +184,17 @@ class MainLayout(BoxLayout):
                 max_intensity = max(self.spectrum_data)
                 print(f"Intensity range: {min_intensity} to {max_intensity}")
                 
-                self.ax.plot(self.wavelengths, self.spectrum_data, 'b-', linewidth=1.5, label=f'Spectrum ({len(self.spectrum_data)} points)')
+                # Add some buffer to intensity range for better visualization
+                intensity_buffer = (max_intensity - min_intensity) * 0.1
+                y_min = max(0, min_intensity - intensity_buffer)  # Don't go below 0
+                y_max = max_intensity + intensity_buffer
+                
+                self.ax.plot(self.wavelengths, self.spectrum_data, 'b-', 
+                             linewidth=1.5, 
+                             label=f'Spectrum ({len(self.spectrum_data)} points)')
                 
                 # Set y-axis limits with some padding
-                self.ax.set_ylim(min_intensity * 0.9, max_intensity * 1.1)
+                self.ax.set_ylim(y_min, y_max)
                 
                 # Add legend and grid
                 self.ax.legend(loc='upper right')
