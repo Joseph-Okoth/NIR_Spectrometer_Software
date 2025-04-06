@@ -61,8 +61,9 @@ NIR_Spectrometer_Software/
 ├── frontend/                   # Frontend logic (UI and visualization)
 │   ├── __init__.py
 │   ├── ui.py                   # Main UI layout and logic (using Kivy)
-│   ├── icons/                  # Folder for icons (e.g., FontAwesome, Material Icons)
-│   └── plots.py                # Code for plotting graphs
+|   ├── custom_widget.py        # Code for customizing the frontend widgets
+│   ├── matplotlib_widget.py                # Code for plotting graph widgets
+│   └── icons/                  # Folder for icons (e.g., FontAwesome, Material Icons)
 │
 ├── config/                     # Configuration files
 │   ├── __init__.py
