@@ -51,7 +51,16 @@ def find_spectrometer():
     return spectrometer_profile
 
 def drop_spectrometer(usb_device):
-    usb.util.dispose_resources(usb_device)
+    """Release resources for the spectrometer."""
+    if usb_device is None:
+        print("No USB device to release.")
+        return  # Safely exit if usb_device is None
+
+    try:
+        usb.util.dispose_resources(usb_device)
+        print("USB resources released successfully.")
+    except Exception as e:
+        print(f"Error releasing USB resources: {e}")
 
 def request_spectrum(usb_device, packet_size, spectra_epi, commands_epo):
     """Request and read spectrum data from the spectrometer."""
