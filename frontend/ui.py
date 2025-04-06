@@ -137,7 +137,7 @@ class MainLayout(BoxLayout):
         """Initialize plot with proper settings and gridlines."""
         self.ax.set_xlabel("Wavelength (nm)")
         self.ax.set_ylabel("Reflectance (%)")  # Changed from "Intensity (counts)"
-        self.ax.set_title("NIR Spectrum")
+        self.ax.set_title("NIR Spectrum Window")
         
         # Set the x-axis range based on wavelength data
         if hasattr(self, 'wavelengths') and len(self.wavelengths) > 0:
@@ -181,7 +181,7 @@ class MainLayout(BoxLayout):
         # Set axis labels
         self.ax.set_xlabel("Wavelength (nm)")
         self.ax.set_ylabel("Reflectance (%)")
-        self.ax.set_title("NIR Spectrum")
+        self.ax.set_title("NIR Spectrum Window")
         
         # Apply tight layout to ensure everything is visible
         self.fig.tight_layout()
@@ -685,7 +685,7 @@ class MainLayout(BoxLayout):
         """Copy the current spectrum data to clipboard."""
         if hasattr(self, 'spectrum_data') and self.spectrum_data is not None:
             try:
-                import pyperclip  # You'll need to install this: pip install pyperclip
+                import pyperclip
                 
                 # Create a formatted string with wavelength and intensity data
                 data_str = "Wavelength (nm),Intensity\n"
@@ -939,7 +939,7 @@ class MainLayout(BoxLayout):
         Popup(title='Success', 
               content=Label(text=f'Signal averaging {status}\nScans to average: {scans}'),
               size_hint=(0.6, 0.3)).open()
-
+        
     def check_icon_paths(self):
         """Debug method to verify icon paths exist."""
         import os
