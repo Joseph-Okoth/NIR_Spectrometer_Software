@@ -192,7 +192,7 @@ class MainLayout(BoxLayout):
 
     def create_icon_bar(self):
         """Create the main icon bar with icons and tooltips."""
-        icon_bar = BoxLayout(size_hint=(1, None), height=60, spacing=5, padding=[5, 5, 5, 0])
+        icon_bar = BoxLayout(size_hint=(1, None), height=60, spacing=8, padding=[10, 5, 10, 5])
         
         # App icon (not clickable)
         app_icon = IconButton(
@@ -253,7 +253,7 @@ class MainLayout(BoxLayout):
 
     def create_icon_bar_2(self):
         """Create the secondary icon bar with icons and tooltips."""
-        icon_bar = BoxLayout(size_hint=(1, None), height=60, spacing=5, padding=[5, 5, 5, 0])
+        icon_bar = BoxLayout(size_hint=(1, None), height=60, spacing=8, padding=[10, 5, 10, 5])
         
         # Scale to fill
         scale_button = IconButton(

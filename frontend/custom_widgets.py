@@ -5,6 +5,7 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.clock import Clock
 from kivy.graphics import Color, Rectangle
+from kivy.uix.widget import Widget
 
 class IconButton(Button):
     """Button with icon image and tooltip."""
@@ -28,20 +29,21 @@ class IconButton(Button):
         # Set up vertical box layout
         layout = BoxLayout(orientation='vertical', padding=[2, 2, 2, 2])
         
-        # Create image widget for the icon with explicit size
+        # Create image widget for the icon with better sizing
         try:
             self.icon = Image(
                 source=icon_source,
                 size_hint=(None, None),
-                size=(48, 48),  # Fixed size for icon
+                size=(36, 36),  # Slightly smaller fixed size for icon
                 allow_stretch=True,
                 keep_ratio=True
             )
-            # Center the image
-            icon_container = BoxLayout(size_hint=(1, 0.8))
-            icon_container.add_widget(Label(size_hint=(0.5, 1)))  # Spacer
+            
+            # Better centering with padding
+            icon_container = BoxLayout(size_hint=(1, 0.8), padding=[4, 4, 4, 0])
+            icon_container.add_widget(Widget(size_hint=(0.5, 1)))  # Spacer
             icon_container.add_widget(self.icon)
-            icon_container.add_widget(Label(size_hint=(0.5, 1)))  # Spacer
+            icon_container.add_widget(Widget(size_hint=(0.5, 1)))  # Spacer
             
             layout.add_widget(icon_container)
             print(f"Successfully loaded icon: {icon_source}")
@@ -79,20 +81,22 @@ class IconButton(Button):
                 title='',
                 content=Label(
                     text=self.tooltip_text,
-                    color=(1, 1, 1, 1)  # White text
+                    color=(1, 1, 1, 1),  # White text
+                    font_size='14sp'  # Slightly larger font
                 ),
                 size_hint=(None, None),
-                size=(max(200, len(self.tooltip_text) * 7), 40),  # Width based on text length
-                background_color=(0.2, 0.2, 0.2, 0.9),  # Dark background with high opacity
+                size=(max(180, len(self.tooltip_text) * 6), 36),  # Slightly smaller size
+                background_color=(0.3, 0.3, 0.3, 0.85),  # Slightly lighter background
                 border=(0, 0, 0, 0)
             )
             
-            # Position below the button
+            # Position tooltip directly below the icon (not the cursor)
             pos = self.to_window(*self.pos)
-            # Position the tooltip below the cursor
-            from kivy.core.window import Window
-            mouse_pos = Window.mouse_pos
-            self.tooltip.pos = (mouse_pos[0] - self.tooltip.width/2, mouse_pos[1] - self.tooltip.height - 10)
+            center_x = pos[0] + self.width / 2
+            bottom_y = pos[1]
+            
+            # Place tooltip below the button
+            self.tooltip.pos = (center_x - self.tooltip.width/2, bottom_y - self.tooltip.height - 5)
             
             self.tooltip.open()
     
