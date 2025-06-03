@@ -28,6 +28,13 @@ It is a free and open source alternative software for Ocean Optics Spectrometers
    pip install -r requirements.txt
    ```
 
+   ```bash
+   ```
+   ```bash
+   ```
+   ```bash
+   ```
+
 ## Usage
 Run the application:
 

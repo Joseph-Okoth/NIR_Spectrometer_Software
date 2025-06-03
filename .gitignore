@@ -3,3 +3,4 @@ config/__pycache__/*
 frontend/__pycache__/*
 spectrum_data.csv
 tests/ref_ui.py
+venv/*
