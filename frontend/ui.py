@@ -10,6 +10,9 @@ from kivy.uix.popup import Popup
 import csv
 import numpy as np
 import os
+import traceback
+from scipy.signal import savgol_filter
+from scipy.interpolate import make_interp_spline
 from backend.spectrometer import find_spectrometer, request_spectrum, drop_spectrometer
 from backend.data_saving import save_to_csv, save_with_metadata, load_from_csv
 from frontend.matplotlib_widget import MatplotlibWidget
@@ -420,13 +423,13 @@ class MainLayout(BoxLayout):
             # Store the processed raw data
             self.spectrum_data = raw_data
             
-            # Apply boxcar smoothing to reduce noise (sliding window average)
-            boxcar_width = 3  # Must be odd number: 3, 5, 7, etc.
-            smoothed_data = np.copy(raw_data)
-            half_width = boxcar_width // 2
-            
-            for i in range(half_width, len(raw_data) - half_width):
-                smoothed_data[i] = np.mean(raw_data[i-half_width:i+half_width+1])
+            # Apply Savitzky-Golay filter for smooth curves that preserve spectral features
+            # Window length must be odd and less than data length
+            window_length = min(11, len(raw_data))
+            if window_length % 2 == 0:
+                window_length -= 1
+            polyorder = min(3, window_length - 1)
+            smoothed_data = savgol_filter(raw_data, window_length, polyorder)
             
             # Calculate reflectance if reference spectrum is available
             if self.reference_spectrum is not None and self.use_reference_correction:
@@ -464,19 +467,43 @@ class MainLayout(BoxLayout):
                 if y_max is None:
                     y_max = max_value + buffer
                 
-                self.ax.plot(self.wavelengths, plot_data, 'b-', 
-                             linewidth=1.5, 
-                             label=f'Spectrum ({len(plot_data)} points)')
+                # Use spline interpolation for smoother curve rendering
+                num_plot_points = min(len(self.wavelengths) * 3, 2048)
+                if len(self.wavelengths) >= 4:
+                    wavelengths_smooth = np.linspace(
+                        self.wavelengths[0], self.wavelengths[-1], num_plot_points
+                    )
+                    spline = make_interp_spline(self.wavelengths, plot_data, k=3)
+                    plot_data_smooth = spline(wavelengths_smooth)
+                    self.ax.plot(wavelengths_smooth, plot_data_smooth, 'b-', 
+                                 linewidth=1.5, 
+                                 label=f'Spectrum ({len(plot_data)} points)')
+                else:
+                    self.ax.plot(self.wavelengths, plot_data, 'b-', 
+                                 linewidth=1.5, 
+                                 label=f'Spectrum ({len(plot_data)} points)')
                 
-                # Set y-axis limits and label
+                # Set axis limits and labels
                 self.ax.set_ylim(y_min, y_max)
                 self.ax.set_ylabel(y_label)
+                self.ax.set_xlabel("Wavelength (nm)")
+                self.ax.set_title("NIR Spectrum Window")
+                
+                # Set x-axis range with margin
+                x_min = min(self.wavelengths)
+                x_max = max(self.wavelengths)
+                x_margin = (x_max - x_min) * 0.05
+                self.ax.set_xlim(x_min - x_margin, x_max + x_margin)
                 
                 # Add legend
                 self.ax.legend(loc='upper right')
                 
-                # Reapply plot settings
-                self._setup_plot()
+                # Enable minor ticks and grid
+                self.ax.minorticks_on()
+                self._update_grid()
+                
+                # Apply tight layout
+                self.fig.tight_layout()
                 
                 # Force redraw
                 self.plot_widget.draw()
@@ -635,12 +662,39 @@ class MainLayout(BoxLayout):
         popup.open()
 
     def load_file(self, file_path):
-        """Load spectrum data from a file and plot it."""
+        """Load spectrum data from a file and plot it with smoothing."""
         try:
             data = np.loadtxt(file_path, delimiter=',')
+            wavelengths = data[:, 0]
+            intensities = data[:, 1]
+            
+            # Apply Savitzky-Golay filter for smooth curves
+            window_length = min(11, len(intensities))
+            if window_length % 2 == 0:
+                window_length -= 1
+            polyorder = min(3, window_length - 1)
+            smoothed = savgol_filter(intensities, window_length, polyorder)
+            
             self.ax.clear()
-            self.ax.plot(data[:, 0], data[:, 1])
-            self._setup_plot()  # Reapply grid and labels
+            
+            # Use spline interpolation for smoother curve rendering
+            if len(wavelengths) >= 4:
+                num_plot_points = min(len(wavelengths) * 3, 2048)
+                wavelengths_smooth = np.linspace(
+                    wavelengths[0], wavelengths[-1], num_plot_points
+                )
+                spline = make_interp_spline(wavelengths, smoothed, k=3)
+                smoothed_plot = spline(wavelengths_smooth)
+                self.ax.plot(wavelengths_smooth, smoothed_plot, 'b-', linewidth=1.5)
+            else:
+                self.ax.plot(wavelengths, smoothed, 'b-', linewidth=1.5)
+            
+            self.ax.set_xlabel("Wavelength (nm)")
+            self.ax.set_ylabel("Intensity (counts)")
+            self.ax.set_title("NIR Spectrum Window")
+            self.ax.minorticks_on()
+            self._update_grid()
+            self.fig.tight_layout()
             self.plot_widget.draw()
         except Exception as e:
             print(f"Error loading file: {e}")

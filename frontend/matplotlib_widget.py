@@ -41,8 +41,31 @@ class MatplotlibWidget(Widget):
         Clock.schedule_once(lambda dt: self._update_figure(), 0)
 
 def plot_spectrum(wavelengths, intensities):
-    plt.plot(wavelengths, intensities)
+    from scipy.signal import savgol_filter
+    from scipy.interpolate import make_interp_spline
+    import numpy as np
+
+    # Apply Savitzky-Golay filter for smooth curves that preserve spectral features
+    window_length = min(11, len(intensities))
+    if window_length % 2 == 0:
+        window_length -= 1
+    polyorder = min(3, window_length - 1)
+    smoothed = savgol_filter(intensities, window_length, polyorder)
+
+    # Use spline interpolation for smoother curve rendering
+    if len(wavelengths) >= 4:
+        num_plot_points = min(len(wavelengths) * 3, 2048)
+        wavelengths_smooth = np.linspace(
+            wavelengths[0], wavelengths[-1], num_plot_points
+        )
+        spline = make_interp_spline(wavelengths, smoothed, k=3)
+        smoothed_plot = spline(wavelengths_smooth)
+        plt.plot(wavelengths_smooth, smoothed_plot, linewidth=1.5)
+    else:
+        plt.plot(wavelengths, smoothed, linewidth=1.5)
+
     plt.xlabel("Wavelength (nm)")
     plt.ylabel("Intensity (counts)")
     plt.title("Spectrum Window")
+    plt.tight_layout()
     plt.show()
